@@ -47,10 +47,31 @@ Open the printed local URL. Click **Load sample data** on the dashboard to explo
 
 ## AI import & the API key
 
-The document parser posts to `https://api.anthropic.com/v1/messages`. Per the app's design, **no
-`Authorization` header is sent** — the API key is expected to be injected by the runtime
-environment. If the AI service is unreachable, every import method falls back gracefully with a
-retry button, and you can always use the manual entry forms.
+The document parser posts the Anthropic Messages request body to a configurable endpoint:
+
+- **Default / dev:** it calls `https://api.anthropic.com/v1/messages` directly (the API key is
+  supplied by the runtime environment — no key in the browser).
+- **Production (e.g. Vercel):** when `VITE_API_PROXY` is set (it defaults to `/api/parse` via
+  `.env.production`), requests go through the serverless proxy in `api/parse.js`, which injects
+  `ANTHROPIC_API_KEY` server-side. **The key is never shipped to the browser bundle.**
+
+If the AI service is unreachable, every import method falls back gracefully with a retry button,
+and you can always use the manual entry forms.
+
+## Deploying to Vercel
+
+1. Push this repo to GitHub (already done).
+2. At [vercel.com](https://vercel.com) → **Add New… → Project** → import this repo. Vercel
+   auto-detects the Vite framework (build `npm run build`, output `dist`); `vercel.json` pins this.
+3. In **Project Settings → Environment Variables**, add:
+   - `ANTHROPIC_API_KEY` = your Anthropic API key (scope: Production, and Preview if you want PR
+     previews to parse). This is read only by the serverless function — never exposed to clients.
+4. **Deploy.** The static app serves from `dist`; AI Import calls `/api/parse`, which proxies to
+   Anthropic with your key.
+
+> **Note on uploads:** Vercel serverless functions cap the request body at ~4.5 MB. Text paste and
+> typical screenshots/single-page PDFs are well under that; very large files may exceed the proxy
+> limit even though the in-app limit is 10 MB.
 
 ## Project structure
 

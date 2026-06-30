@@ -88,8 +88,13 @@ function sanitizeItem(raw) {
   }
 }
 
+// When VITE_API_PROXY is set (e.g. "/api/parse" on Vercel), requests go through a
+// serverless proxy that injects the API key server-side. Otherwise we call the
+// Anthropic API directly (the key is supplied by the runtime environment).
+const PARSER_ENDPOINT = import.meta.env.VITE_API_PROXY || 'https://api.anthropic.com/v1/messages'
+
 async function callAnthropic(contentBlocks) {
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetch(PARSER_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
