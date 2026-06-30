@@ -154,7 +154,13 @@ export function useDocumentParser() {
       } else if (err.status === 429) {
         message = 'Rate limit reached. Please wait a moment and retry.'
       } else if (err.status >= 500) {
-        message = 'The AI service is temporarily unavailable. Please retry.'
+        // Surface a specific, actionable server message when one is provided
+        // (e.g. the proxy reporting a missing ANTHROPIC_API_KEY); otherwise
+        // fall back to the generic transient-error message.
+        message =
+          err.message && /api.?key|not configured|configured with/i.test(err.message)
+            ? err.message
+            : 'The AI service is temporarily unavailable. Please retry.'
       }
       setError(message)
       return null
